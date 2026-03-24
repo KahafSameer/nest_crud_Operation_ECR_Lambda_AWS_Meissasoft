@@ -31,14 +31,47 @@
 
 
 
-// lambda2.ts - FIXED
+// // lambda2.ts - FIXED
+// const { configure: serverlessExpress } = require('@vendia/serverless-express');
+// const express = require('express');
+// const { NestFactory } = require('@nestjs/core');
+// const { ExpressAdapter } = require('@nestjs/platform-express');
+// const { AppModule } = require('./dist/app.module');
+
+// let cachedHandler;
+
+// async function createHandler() {
+//   if (cachedHandler) return cachedHandler;
+
+//   const expressApp = express();
+//   const adapter = new ExpressAdapter(expressApp);
+
+//   const nestApp = await NestFactory.create(AppModule, adapter, {
+//     logger: ['error', 'warn', 'log'],
+//   });
+
+//   await nestApp.init();
+
+//   cachedHandler = serverlessExpress({ app: expressApp }); // ✅ new API
+//   return cachedHandler;
+// }
+
+// exports.handler = async (event, context) => {
+//   const handler = await createHandler();
+//   return handler(event, context);
+// };
+
+
+
+// docker file 3.
+
 const { configure: serverlessExpress } = require('@vendia/serverless-express');
 const express = require('express');
 const { NestFactory } = require('@nestjs/core');
 const { ExpressAdapter } = require('@nestjs/platform-express');
-const { AppModule } = require('./dist/app.module');
+const { AppModule } = require('./dist/src/app.module'); // ← note: dist/src not dist
 
-let cachedHandler;
+let cachedHandler: any;
 
 async function createHandler() {
   if (cachedHandler) return cachedHandler;
@@ -51,12 +84,11 @@ async function createHandler() {
   });
 
   await nestApp.init();
-
-  cachedHandler = serverlessExpress({ app: expressApp }); // ✅ new API
+  cachedHandler = serverlessExpress({ app: expressApp });
   return cachedHandler;
 }
 
-exports.handler = async (event, context) => {
-  const handler = await createHandler();
-  return handler(event, context);
+export const handler = async (event: any, context: any) => {
+  const h = await createHandler();
+  return h(event, context);
 };

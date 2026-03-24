@@ -1,26 +1,41 @@
 # syntax=docker/dockerfile:1.6
 
-# buildx sets TARGETPLATFORM automatically; default keeps plain `docker build` working too
+# ------------------------------
+# Stage 1: Build NestJS
+# ------------------------------
 ARG TARGETPLATFORM=linux/amd64
-
-# Stage 1: Build NestJS (platform-aware for buildx)
 FROM --platform=$TARGETPLATFORM node:20 AS build
+
 WORKDIR /app
+
+# Install dependencies
 COPY package*.json ./
 RUN npm ci
+
+# Copy source code
 COPY . .
+
+# Build NestJS project
 RUN npm run build
 
-# Stage 2: Lambda compatible
+# ------------------------------
+# Stage 2: Lambda compatible image
+# ------------------------------
 FROM --platform=$TARGETPLATFORM public.ecr.aws/lambda/nodejs:20
 
-# Copy dist + lambda handler
-COPY --from=build /app/dist /var/task/dist
-COPY lambda.ts /var/task/index.js
-COPY --from=build /app/package*.json /var/task
+WORKDIR /var/task
+
+# Copy build + package.json + node_modules
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/package*.json ./
+COPY --from=build /app/node_modules ./node_modules
+
+# Copy Lambda handler
+COPY lambda.ts ./index.js
 
 ENV NODE_ENV=production
-RUN npm ci --omit=dev
 
-# Lambda entrypoint
+# Optional: expose port for local testing
+EXPOSE 3000
+
 CMD ["index.handler"]
