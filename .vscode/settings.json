@@ -1,0 +1,12 @@
+{
+    "C_Cpp.autocompleteAddParentheses": true,
+    "editor.inlineSuggest.suppressSuggestions": true,
+    "editor.suggest.snippetsPreventQuickSuggestions": true,
+    "editor.wordBasedSuggestions": "allDocuments",
+    "search.searchView.keywordSuggestions": true,
+    "debug.console.acceptSuggestionOnEnter": "on",
+    "emmet.showSuggestionsAsSnippets": true,
+    "github.copilot.nextEditSuggestions.extendedRange": true,
+    "editor.suggest.shareSuggestSelections": true,
+    "editor.inlineSuggest.triggerCommandOnProviderChange": true
+}
