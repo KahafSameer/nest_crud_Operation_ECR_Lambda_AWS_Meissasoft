@@ -1,6 +1,8 @@
 name: Secure CI Pipeline
 
 on:
+  push:
+    branches: [ dev, main ]
   pull_request:
     branches: [ dev, main ]
 
@@ -35,12 +37,12 @@ jobs:
       uses: github/codeql-action/analyze@v3
 
     # -------------------------------
-    # 🔍 Gitleaks: FIXED STEP ✅
+    # 🔍 Gitleaks
     # -------------------------------
     - name: Run Gitleaks
       uses: gitleaks/gitleaks-action@v2
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Ye missing tha!
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     # -------------------------------
     # 🔍 Trivy: Vulnerability scan
@@ -52,29 +54,8 @@ jobs:
         severity: 'CRITICAL,HIGH'
         exit-code: '1'
 
-    # -------------------------------
-    # Node.js setup + dependencies
-    # -------------------------------
-    - name: Install Node.js
-      uses: actions/setup-node@v4 # Updated to v4
-      with:
-        node-version: '20'
-        cache: 'npm' # Build fast karne ke liye caching zaroori hai
-        cache-dependency-path: |
-          backend/package-lock.json
-          frontend/package-lock.json
-
-    - name: Install Dependencies (Backend)
-      run: |
-        cd backend
-        npm ci
-
-    - name: Install Dependencies (Frontend)
-      run: |
-        cd frontend
-        npm ci
-
   quality:
+    needs: security-checks
     timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
@@ -86,36 +67,16 @@ jobs:
       with:
         node-version: '20'
         cache: 'npm'
-        cache-dependency-path: |
-          backend/package-lock.json
-          frontend/package-lock.json
+        cache-dependency-path: package-lock.json
 
-    - name: Install Dependencies (Backend)
-      run: |
-        cd backend
-        npm ci
+    - name: Install dependencies
+      run: npm ci
 
-    - name: Install Dependencies (Frontend)
-      run: |
-        cd frontend
-        npm ci
+    - name: Run lint
+      run: npm run lint
 
-    - name: Backend tests
-      run: |
-        cd backend
-        npm test
+    - name: Run unit tests
+      run: npm test
 
-    - name: Backend build
-      run: |
-        cd backend
-        npm run build
-
-    - name: Frontend lint
-      run: |
-        cd frontend
-        npm run lint
-
-    - name: Frontend build
-      run: |
-        cd frontend
-        npm run build
+    - name: Build NestJS app
+      run: npm run build
