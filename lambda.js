@@ -26,14 +26,20 @@
 //   return handler(event, context);
 // };
 
+
 const { configure: serverlessExpress } = require('@vendia/serverless-express');
 const express = require('express');
 const { NestFactory } = require('@nestjs/core');
 const { ExpressAdapter } = require('@nestjs/platform-express');
 const { AppModule } = require('./dist/src/app.module');
 
-const AWS = require('aws-sdk');
-const secretsManager = new AWS.SecretsManager();
+// ✅ AWS SDK v3
+const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager');
+
+// ✅ client create
+const client = new SecretsManagerClient({
+  region: "us-east-1", // 👈 apna region confirm kar lena
+});
 
 let cachedHandler;
 let cachedSecret;
@@ -42,14 +48,16 @@ let cachedSecret;
 async function getSecret() {
   if (cachedSecret) return cachedSecret;
 
-  const data = await secretsManager.getSecretValue({
-    SecretId: "prod/crudapp/databseurl1" // 👈 tumhara secret name
-  }).promise();
+  const command = new GetSecretValueCommand({
+    SecretId: "prod/crudapp/databseurl1", // 👈 tumhara secret name
+  });
+
+  const data = await client.send(command);
 
   let secret;
 
   try {
-    // Key/Value case (recommended)
+    // Key/Value case
     secret = JSON.parse(data.SecretString);
   } catch (err) {
     // Fallback (plain string)
@@ -66,7 +74,7 @@ async function createHandler() {
   // ✅ Secret load
   const secret = await getSecret();
 
-  // ✅ ENV inject (IMPORTANT: same key name)
+  // ✅ ENV inject
   process.env.DATABASE_URL = secret.DATABASE_URL;
 
   const expressApp = express();
