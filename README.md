@@ -98,9 +98,33 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
 
 
-to build the project:
+## Project-specific commands
 
-docker buildx build --platform linux/amd64 -t nestjs-lambda .
+### Run locally
 
+```bash
+# install deps
+npm ci
 
+# start in watch mode
+npm run start:dev
 
+# health check
+curl http://localhost:3000/health
+```
+
+### Lambda image build and ECR push (working commands)
+
+```bash
+# 1) Build linux/amd64 image for Lambda (no OCI attestations)
+docker buildx build --platform linux/amd64 --provenance=false --sbom=false --load -t nest-crud-lambda .
+
+# 2) Tag local image
+docker tag nest-crud-lambda:latest 140977286852.dkr.ecr.us-east-1.amazonaws.com/nest-crud-lambda:latest
+
+# 3) Login to ECR
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 140977286852.dkr.ecr.us-east-1.amazonaws.com
+
+# 4) Push to ECR
+docker push 140977286852.dkr.ecr.us-east-1.amazonaws.com/nest-crud-lambda:latest
+```
