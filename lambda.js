@@ -25,3 +25,4 @@ exports.handler = async (event, context) => {
   const handler = await createHandler();
   return handler(event, context);
 };
+

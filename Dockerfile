@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.6
-
 # ------------------------------
 # Stage 1: Build NestJS
 # ------------------------------
@@ -19,23 +17,23 @@ COPY . .
 RUN npm run build
 
 # ------------------------------
-# Stage 2: Lambda compatible image
+# Stage 2: Lambda runtime for AWS/ECR
 # ------------------------------
 FROM --platform=$TARGETPLATFORM public.ecr.aws/lambda/nodejs:20
 
 WORKDIR /var/task
 
-# Copy build + package.json + node_modules
+# Copy built app + dependencies
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/package*.json ./
 COPY --from=build /app/node_modules ./node_modules
 
-# Copy Lambda handler
-COPY lambda.ts ./index.js
+# Lambda entrypoint (CommonJS)
+COPY lambda.js ./index.js
 
 ENV NODE_ENV=production
 
-# Optional: expose port for local testing
+# For local testing only (Lambda Runtime Interface Emulator)
 EXPOSE 3000
 
 CMD ["index.handler"]
